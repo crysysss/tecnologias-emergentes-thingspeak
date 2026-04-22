@@ -1,0 +1,53 @@
+---
+meta:
+  name: preparar_escritura_controlada_thingspeak
+  language: python
+  version: 1.0
+  tags: [thingspeak, telemetria, escritura-controlada, validacion]
+---
+
+RUNE: preparar_escritura_controlada_thingspeak
+
+SIGNATURE: |
+  def preparar_escritura_controlada_thingspeak(
+      carga_cognitiva_pct: float,
+      nivel_coherencia_pct: float,
+      intensidad_emocional_pct: float,
+      latencia_inferencia_ms: float,
+      consumo_energetico_w: float,
+      writes_enabled: bool,
+      write_api_key_configured: bool,
+  ) -> dict[str, str]
+
+INTENT: |
+  Valida una medicion completa del dominio y decide si puede convertirse en una
+  escritura real hacia ThingSpeak. Solo devuelve el payload cuando la
+  configuracion runtime permite escribir en el canal de pruebas.
+
+BEHAVIOR:
+  - WHEN writes_enabled is False THEN raise ValueError("Las escrituras reales estan deshabilitadas por configuracion")
+  - WHEN write_api_key_configured is False THEN raise ValueError("No hay WRITE_API_KEY configurada para habilitar escrituras reales")
+  - WHEN any metric is missing or not numeric THEN raise ValueError("Todas las metricas deben ser numericas")
+  - WHEN carga_cognitiva_pct < 0 or carga_cognitiva_pct > 100 THEN raise ValueError("La carga cognitiva debe estar entre 0 y 100")
+  - WHEN nivel_coherencia_pct < 0 or nivel_coherencia_pct > 100 THEN raise ValueError("El nivel de coherencia debe estar entre 0 y 100")
+  - WHEN intensidad_emocional_pct < 0 or intensidad_emocional_pct > 100 THEN raise ValueError("La intensidad emocional debe estar entre 0 y 100")
+  - WHEN latencia_inferencia_ms < 0 THEN raise ValueError("La latencia de inferencia no puede ser negativa")
+  - WHEN consumo_energetico_w < 0 THEN raise ValueError("El consumo energetico no puede ser negativo")
+  - OTHERWISE return {"field1": "<carga_cognitiva_pct>", "field2": "<nivel_coherencia_pct>", "field3": "<intensidad_emocional_pct>", "field4": "<latencia_inferencia_ms>", "field5": "<consumo_energetico_w>"} preserving decimal precision and using dot as decimal separator
+
+TESTS:
+  - "preparar_escritura_controlada_thingspeak(52.4, 96.8, 35.2, 118.6, 42.3, True, True)['field1'] == '52.4'"
+  - "preparar_escritura_controlada_thingspeak(52.4, 96.8, 35.2, 118.6, 42.3, False, True) raises ValueError"
+  - "preparar_escritura_controlada_thingspeak(52.4, 96.8, 35.2, 118.6, 42.3, True, False) raises ValueError"
+  - "preparar_escritura_controlada_thingspeak(10, 101, 50, 120, 40, True, True) raises ValueError"
+
+CONSTRAINTS:
+  - "Las cinco metricas son obligatorias y deben ser numericas"
+  - "Los porcentajes deben permanecer en el rango 0..100"
+  - "La escritura real exige configuracion habilitada y WRITE_API_KEY presente"
+  - "La salida usa el mapeo field1..field5 del canal ThingSpeak configurado"
+
+EDGE_CASES:
+  - "Canal accesible pero con escritura deshabilitada: no se debe construir un payload escribible"
+  - "Valores decimales: deben conservarse sin coma decimal"
+  - "Entrada no numerica: debe disparar ValueError antes de construir el payload"

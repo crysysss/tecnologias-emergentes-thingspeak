@@ -1,0 +1,13 @@
+{
+  "backend_host": "127.0.0.1",
+  "backend_port": 8000,
+  "frontend_origin": "http://127.0.0.1:4321",
+  "thingspeak_base_url": "https://api.thingspeak.com",
+  "thingspeak_channel_id": 3353980,
+  "thingspeak_read_api_key": "MHKVRKGB6B5JZJO9",
+  "thingspeak_write_api_key": "9G2URNLYRFQNTQ1R",
+  "thingspeak_allow_live_reads": true,
+  "thingspeak_allow_write": true,
+  "thingspeak_request_timeout_seconds": 5.0,
+  "thingspeak_min_seconds_between_writes": 16.0
+}

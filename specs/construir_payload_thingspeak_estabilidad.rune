@@ -1,0 +1,49 @@
+---
+meta:
+  name: construir_payload_thingspeak_estabilidad
+  language: python
+  version: 1.0
+  tags: [thingspeak, telemetria, neurobotics, validacion]
+---
+
+RUNE: construir_payload_thingspeak_estabilidad
+
+SIGNATURE: |
+  def construir_payload_thingspeak_estabilidad(
+      carga_cognitiva_pct: float,
+      nivel_coherencia_pct: float,
+      intensidad_emocional_pct: float,
+      latencia_inferencia_ms: float,
+      consumo_energetico_w: float,
+  ) -> dict[str, str]
+
+INTENT: |
+  Valida una medicion completa del estado cognitivo del androide y la transforma
+  al formato de campos esperado por ThingSpeak para el canal del proyecto.
+  Devuelve un diccionario listo para usarse como parametros de escritura.
+
+BEHAVIOR:
+  - WHEN any metric is missing or not numeric THEN raise ValueError("Todas las metricas deben ser numericas")
+  - WHEN carga_cognitiva_pct < 0 or carga_cognitiva_pct > 100 THEN raise ValueError("La carga cognitiva debe estar entre 0 y 100")
+  - WHEN nivel_coherencia_pct < 0 or nivel_coherencia_pct > 100 THEN raise ValueError("El nivel de coherencia debe estar entre 0 y 100")
+  - WHEN intensidad_emocional_pct < 0 or intensidad_emocional_pct > 100 THEN raise ValueError("La intensidad emocional debe estar entre 0 y 100")
+  - WHEN latencia_inferencia_ms < 0 THEN raise ValueError("La latencia de inferencia no puede ser negativa")
+  - WHEN consumo_energetico_w < 0 THEN raise ValueError("El consumo energetico no puede ser negativo")
+  - OTHERWISE return {"field1": "<carga_cognitiva_pct>", "field2": "<nivel_coherencia_pct>", "field3": "<intensidad_emocional_pct>", "field4": "<latencia_inferencia_ms>", "field5": "<consumo_energetico_w>"} preserving decimal precision and using dot as decimal separator
+
+TESTS:
+  - "construir_payload_thingspeak_estabilidad(52.4, 96.8, 35.2, 118.6, 42.3)['field1'] == '52.4'"
+  - "construir_payload_thingspeak_estabilidad(0, 0, 0, 0, 0)['field5'] == '0'"
+  - "construir_payload_thingspeak_estabilidad(10, 101, 50, 120, 40) raises ValueError"
+  - "construir_payload_thingspeak_estabilidad(10, 90, -1, 120, 40) raises ValueError"
+  - "construir_payload_thingspeak_estabilidad(10, 90, 50, -5, 40) raises ValueError"
+
+CONSTRAINTS:
+  - "Las cinco metricas son obligatorias y deben ser numericas"
+  - "Los porcentajes deben permanecer en el rango 0..100"
+  - "La salida usa el mapeo field1..field5 del canal ThingSpeak del proyecto"
+
+EDGE_CASES:
+  - "Todos los valores a cero: el payload es valido si mantiene cinco campos"
+  - "Valores decimales: deben conservarse sin coma decimal"
+  - "Entrada no numerica: debe disparar ValueError antes de construir el payload"

@@ -1,0 +1,93 @@
+[
+  {
+    "entry_id": 1,
+    "recorded_at": "2026-04-21T09:00:00Z",
+    "cognitive_load_pct": 52.4,
+    "coherence_level_pct": 96.8,
+    "emotional_intensity_pct": 35.2,
+    "inference_latency_ms": 118.6,
+    "power_consumption_w": 42.3
+  },
+  {
+    "entry_id": 2,
+    "recorded_at": "2026-04-21T09:05:00Z",
+    "cognitive_load_pct": 58.7,
+    "coherence_level_pct": 94.3,
+    "emotional_intensity_pct": 41.9,
+    "inference_latency_ms": 126.4,
+    "power_consumption_w": 46.8
+  },
+  {
+    "entry_id": 3,
+    "recorded_at": "2026-04-21T09:10:00Z",
+    "cognitive_load_pct": 63.9,
+    "coherence_level_pct": 91.5,
+    "emotional_intensity_pct": 48.6,
+    "inference_latency_ms": 162.8,
+    "power_consumption_w": 51.7
+  },
+  {
+    "entry_id": 4,
+    "recorded_at": "2026-04-21T09:15:00Z",
+    "cognitive_load_pct": 69.2,
+    "coherence_level_pct": 88.1,
+    "emotional_intensity_pct": 56.3,
+    "inference_latency_ms": 134.9,
+    "power_consumption_w": 57.9
+  },
+  {
+    "entry_id": 5,
+    "recorded_at": "2026-04-21T09:20:00Z",
+    "cognitive_load_pct": 74.6,
+    "coherence_level_pct": 84.7,
+    "emotional_intensity_pct": 63.5,
+    "inference_latency_ms": 148.2,
+    "power_consumption_w": 63.4
+  },
+  {
+    "entry_id": 6,
+    "recorded_at": "2026-04-21T09:25:00Z",
+    "cognitive_load_pct": 79.8,
+    "coherence_level_pct": 81.2,
+    "emotional_intensity_pct": 71.8,
+    "inference_latency_ms": 178.5,
+    "power_consumption_w": 69.6
+  },
+  {
+    "entry_id": 7,
+    "recorded_at": "2026-04-21T09:30:00Z",
+    "cognitive_load_pct": 84.3,
+    "coherence_level_pct": 77.6,
+    "emotional_intensity_pct": 79.4,
+    "inference_latency_ms": 196.7,
+    "power_consumption_w": 76.2
+  },
+  {
+    "entry_id": 8,
+    "recorded_at": "2026-04-21T09:35:00Z",
+    "cognitive_load_pct": 88.9,
+    "coherence_level_pct": 73.8,
+    "emotional_intensity_pct": 86.7,
+    "inference_latency_ms": 214.3,
+    "power_consumption_w": 82.5
+  },
+  {
+    "entry_id": 9,
+    "recorded_at": "2026-04-21T09:40:00Z",
+    "cognitive_load_pct": 92.5,
+    "coherence_level_pct": 70.4,
+    "emotional_intensity_pct": 92.1,
+    "inference_latency_ms": 231.6,
+    "power_consumption_w": 88.7
+  },
+  {
+    "entry_id": 10,
+    "recorded_at": "2026-04-21T09:45:00Z",
+    "cognitive_load_pct": 95.8,
+    "coherence_level_pct": 67.9,
+    "emotional_intensity_pct": 96.4,
+    "inference_latency_ms": 249.8,
+    "power_consumption_w": 94.1
+  }
+]
+

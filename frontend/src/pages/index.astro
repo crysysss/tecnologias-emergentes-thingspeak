@@ -1,0 +1,637 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const backendBaseUrl =
+  import.meta.env.PUBLIC_BACKEND_URL?.trim() || "http://127.0.0.1:8000";
+---
+
+<BaseLayout
+  title="NeuroBotics Telemetria Segura"
+  description="Lectura de telemetria cognitiva, distincion de estado de canal y escritura controlada."
+>
+  <main class="dashboard-shell">
+    <section class="hero-panel reveal">
+      <div class="hero-copy">
+        <p class="hero-kicker">ThingSpeak / NeuroBotics / Runtime Control</p>
+        <h1 id="channel-name">Telemetria Androide IA - NeuroBotics</h1>
+        <p id="channel-description" class="hero-description">
+          Cargando descripcion del canal y estado operativo...
+        </p>
+      </div>
+
+      <div class="hero-meta">
+        <div class="metric-chip">
+          <span class="metric-chip__label">Backend</span>
+          <strong id="backend-status">Pendiente</strong>
+        </div>
+        <div class="metric-chip">
+          <span class="metric-chip__label">Fuente de datos</span>
+          <strong id="data-source">Detectando</strong>
+        </div>
+        <div class="metric-chip metric-chip--warning">
+          <span class="metric-chip__label">Escritura</span>
+          <strong id="write-mode">Bloqueada</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="notice-grid reveal">
+      <article class="notice-card notice-card--alert">
+        <span class="notice-card__eyebrow">Regla operativa</span>
+        <h2>Canal publico con trazabilidad</h2>
+        <p>
+          El dashboard distingue entre tres estados reales: lectura en vivo con datos,
+          canal accesible pero vacio y fallback local por error de red. El preview
+          nunca escribe; la escritura real depende de que el backend tenga la
+          configuracion local habilitada.
+        </p>
+      </article>
+
+      <article class="notice-card">
+        <span class="notice-card__eyebrow">Monitor</span>
+        <h2 id="health-headline">Esperando respuesta del backend</h2>
+        <p id="health-detail">
+          Si el backend esta offline o sin red, la interfaz indicara con claridad si
+          esta usando el dataset local o si el canal real esta accesible pero vacio.
+        </p>
+      </article>
+    </section>
+
+    <section class="content-grid">
+      <article class="panel panel--latest reveal">
+        <div class="panel__header">
+          <div>
+            <span class="panel__eyebrow">Ultima medicion</span>
+            <h2>Estado cognitivo actual</h2>
+          </div>
+          <div class="panel__header-meta">
+            <span id="latest-source-badge" class="badge">sin datos</span>
+          </div>
+        </div>
+
+        <div class="measurement-grid">
+          <div class="measurement-card">
+            <span>Carga cognitiva</span>
+            <strong id="latest-cognitive-load">--</strong>
+          </div>
+          <div class="measurement-card">
+            <span>Nivel de coherencia</span>
+            <strong id="latest-coherence-level">--</strong>
+          </div>
+          <div class="measurement-card">
+            <span>Intensidad emocional</span>
+            <strong id="latest-emotional-intensity">--</strong>
+          </div>
+          <div class="measurement-card">
+            <span>Latencia de inferencia</span>
+            <strong id="latest-inference-latency">--</strong>
+          </div>
+          <div class="measurement-card">
+            <span>Consumo energetico</span>
+            <strong id="latest-power-consumption">--</strong>
+          </div>
+        </div>
+
+        <div class="latest-footer">
+          <div>
+            <span class="meta-label">Marca temporal</span>
+            <strong id="latest-timestamp">--</strong>
+          </div>
+          <div>
+            <span class="meta-label">Entry ID</span>
+            <strong id="latest-entry-id">--</strong>
+          </div>
+          <div>
+            <span class="meta-label">Warnings</span>
+            <strong id="latest-warning-count">0</strong>
+          </div>
+        </div>
+
+        <p id="latest-detail" class="state-detail">
+          Esperando la primera respuesta del backend...
+        </p>
+        <ul id="latest-warnings" class="warning-list"></ul>
+      </article>
+
+      <article class="panel panel--preview reveal">
+        <div class="panel__header">
+          <div>
+            <span class="panel__eyebrow">Preview y escritura controlada</span>
+            <h2>Validar y, si procede, escribir en el canal</h2>
+          </div>
+          <span id="write-capability-badge" class="badge badge--locked">
+            escritura bloqueada
+          </span>
+        </div>
+
+        <form id="preview-form" class="preview-form">
+          <label>
+            <span>Carga cognitiva (%)</span>
+            <input name="cognitive_load_pct" type="number" min="0" max="100" step="0.1" value="52.4" required />
+          </label>
+          <label>
+            <span>Nivel de coherencia (0-100)</span>
+            <input name="coherence_level_pct" type="number" min="0" max="100" step="0.1" value="96.8" required />
+          </label>
+          <label>
+            <span>Intensidad emocional (0-100)</span>
+            <input name="emotional_intensity_pct" type="number" min="0" max="100" step="0.1" value="35.2" required />
+          </label>
+          <label>
+            <span>Latencia de inferencia (ms)</span>
+            <input name="inference_latency_ms" type="number" min="0" step="0.1" value="118.6" required />
+          </label>
+          <label>
+            <span>Consumo energetico (W)</span>
+            <input name="power_consumption_w" type="number" min="0" step="0.1" value="42.3" required />
+          </label>
+
+          <div class="preview-form__actions">
+            <div class="preview-form__buttons">
+              <button type="submit">Previsualizar payload</button>
+              <button id="write-button" class="ghost-button" type="button">
+                Escribir en canal
+              </button>
+            </div>
+            <p id="preview-status" class="inline-status">
+              El preview valida el payload sin tocar ThingSpeak.
+            </p>
+            <p id="write-status" class="inline-status">
+              La escritura real solo funciona cuando el backend tiene permisos de escritura en su configuracion local.
+            </p>
+          </div>
+        </form>
+
+        <div class="preview-output">
+          <div>
+            <span class="meta-label">Payload</span>
+            <pre id="preview-payload" class="code-panel">{`{}`}</pre>
+          </div>
+          <div>
+            <span class="meta-label">Warnings</span>
+            <ul id="preview-warnings" class="warning-list"></ul>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="panel panel--history reveal">
+      <div class="panel__header">
+        <div>
+          <span class="panel__eyebrow">Historico reciente</span>
+          <h2>Ultimas 10 lecturas disponibles</h2>
+        </div>
+        <button id="refresh-button" class="ghost-button" type="button">
+          Actualizar
+        </button>
+      </div>
+
+      <div class="history-table-wrap">
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>Entry</th>
+              <th>Timestamp</th>
+              <th>Carga</th>
+              <th>Coherencia</th>
+              <th>Emocion</th>
+              <th>Latencia</th>
+              <th>Consumo</th>
+              <th>Origen</th>
+            </tr>
+          </thead>
+          <tbody id="history-body">
+            <tr>
+              <td colspan="8" class="history-table__placeholder">
+                Esperando historico...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script define:vars={{ backendBaseUrl }} type="module">
+    const apiBase = backendBaseUrl.replace(/\/$/, "");
+
+    const element = (id) => document.getElementById(id);
+
+    const ui = {
+      backendStatus: element("backend-status"),
+      dataSource: element("data-source"),
+      writeMode: element("write-mode"),
+      writeCapabilityBadge: element("write-capability-badge"),
+      healthHeadline: element("health-headline"),
+      healthDetail: element("health-detail"),
+      channelName: element("channel-name"),
+      channelDescription: element("channel-description"),
+      latestSourceBadge: element("latest-source-badge"),
+      latestTimestamp: element("latest-timestamp"),
+      latestEntryId: element("latest-entry-id"),
+      latestWarningCount: element("latest-warning-count"),
+      latestWarnings: element("latest-warnings"),
+      latestDetail: element("latest-detail"),
+      latestCognitiveLoad: element("latest-cognitive-load"),
+      latestCoherenceLevel: element("latest-coherence-level"),
+      latestEmotionalIntensity: element("latest-emotional-intensity"),
+      latestInferenceLatency: element("latest-inference-latency"),
+      latestPowerConsumption: element("latest-power-consumption"),
+      historyBody: element("history-body"),
+      previewForm: element("preview-form"),
+      previewStatus: element("preview-status"),
+      writeStatus: element("write-status"),
+      previewPayload: element("preview-payload"),
+      previewWarnings: element("preview-warnings"),
+      writeButton: element("write-button"),
+      refreshButton: element("refresh-button")
+    };
+
+    // Este mapa evita llenar el codigo de "if" repetitivos y hace mas facil que
+    // cualquier companero entienda que estados puede devolver realmente el backend.
+    const RESPONSE_KEYS = {
+      name: ["name", "channel_name", "title"],
+      description: ["description", "channel_description", "summary"],
+      timestamp: ["created_at", "timestamp", "recorded_at", "observed_at"],
+      entryId: ["entry_id", "entryId", "id"],
+      cognitiveLoad: ["cognitive_load_pct", "carga_cognitiva_pct", "field1"],
+      coherenceLevel: ["coherence_level_pct", "nivel_coherencia_pct", "field2"],
+      emotionalIntensity: ["emotional_intensity_pct", "intensidad_emocional_pct", "field3"],
+      inferenceLatency: ["inference_latency_ms", "latencia_inferencia_ms", "field4"],
+      powerConsumption: ["power_consumption_w", "consumo_energetico_w", "field5"],
+      warnings: ["warnings", "advisories", "alerts"]
+    };
+
+    const CHANNEL_STATE_MAP = {
+      live_data: {
+        badge: "ThingSpeak live",
+        source: "ThingSpeak en directo",
+        headline: "Canal accesible con datos reales",
+        detail: "La aplicacion esta leyendo mediciones reales desde ThingSpeak."
+      },
+      live_empty: {
+        badge: "Canal vacio",
+        source: "ThingSpeak vacio",
+        headline: "Canal accesible pero sin mediciones",
+        detail: "ThingSpeak responde, pero el canal todavia no tiene muestras completas."
+      },
+      fixture_fallback: {
+        badge: "Fallback local",
+        source: "Fallback local",
+        headline: "Fallback local por error de lectura",
+        detail: "La aplicacion ha pasado al dataset local porque la lectura en vivo fallo."
+      },
+      fixture_only: {
+        badge: "Dataset local",
+        source: "Dataset local",
+        headline: "Lectura local por configuracion",
+        detail: "Las lecturas en vivo estan deshabilitadas y solo se usa el dataset local."
+      }
+    };
+
+    function pickValue(record, keys, fallback = "--") {
+      for (const key of keys) {
+        if (record && record[key] !== undefined && record[key] !== null && record[key] !== "") {
+          return record[key];
+        }
+      }
+      return fallback;
+    }
+
+    function extractList(payload) {
+      // El frontend es tolerante a varias formas de respuesta para no romperse si
+      // el backend expone `measurements`, `items` o una lista directa.
+      if (Array.isArray(payload)) {
+        return payload;
+      }
+
+      if (payload && Array.isArray(payload.items)) {
+        return payload.items;
+      }
+
+      if (payload && Array.isArray(payload.measurements)) {
+        return payload.measurements;
+      }
+
+      if (payload && Array.isArray(payload.history)) {
+        return payload.history;
+      }
+
+      if (payload && Array.isArray(payload.feeds)) {
+        return payload.feeds;
+      }
+
+      return [];
+    }
+
+    function ensureWarnings(record) {
+      const warnings = pickValue(record, RESPONSE_KEYS.warnings, []);
+      if (Array.isArray(warnings)) {
+        return warnings;
+      }
+      if (typeof warnings === "string" && warnings.trim()) {
+        return [warnings];
+      }
+      return [];
+    }
+
+    function formatNumber(value, suffix = "") {
+      if (value === "--") {
+        return value;
+      }
+      const parsed = Number(value);
+      if (Number.isNaN(parsed)) {
+        return `${value}${suffix}`;
+      }
+      return `${parsed.toFixed(1)}${suffix}`;
+    }
+
+    function formatTimestamp(value) {
+      if (!value || value === "--") {
+        return "--";
+      }
+      const parsed = new Date(value);
+      if (Number.isNaN(parsed.getTime())) {
+        return String(value);
+      }
+      return parsed.toLocaleString("es-ES");
+    }
+
+    function setWarningList(target, warnings, emptyMessage) {
+      target.innerHTML = "";
+      if (!warnings.length) {
+        const item = document.createElement("li");
+        item.className = "warning-list__empty";
+        item.textContent = emptyMessage;
+        target.appendChild(item);
+        return;
+      }
+
+      for (const warning of warnings) {
+        const item = document.createElement("li");
+        item.textContent = warning;
+        target.appendChild(item);
+      }
+    }
+
+    function applyChannelState(payload) {
+      // La UI no deduce estados por intuicion: usa la clasificacion explicita del
+      // backend para diferenciar canal vacio, live real y fallback local.
+      const state = payload?.channel_state || (payload?.source === "fixture" ? "fixture_fallback" : "live_data");
+      const stateConfig = CHANNEL_STATE_MAP[state] || CHANNEL_STATE_MAP.fixture_fallback;
+      const detail = payload?.detail || stateConfig.detail;
+
+      ui.dataSource.textContent = stateConfig.source;
+      ui.healthHeadline.textContent = stateConfig.headline;
+      ui.healthDetail.textContent = detail;
+      ui.latestSourceBadge.textContent = stateConfig.badge;
+      ui.latestDetail.textContent = detail;
+    }
+
+    async function fetchJson(path, options = {}) {
+      // Centralizamos el parseo de errores para reutilizar mensajes claros tanto
+      // en preview como en escritura real.
+      const response = await fetch(`${apiBase}${path}`, {
+        headers: {
+          "Content-Type": "application/json"
+        },
+        ...options
+      });
+
+      if (!response.ok) {
+        let message = `HTTP ${response.status} en ${path}`;
+        try {
+          const errorPayload = await response.json();
+          if (errorPayload?.detail) {
+            message = String(errorPayload.detail);
+          }
+        } catch {
+          // Sin cuerpo JSON de error; se mantiene el mensaje por defecto.
+        }
+        throw new Error(message);
+      }
+
+      return response.json();
+    }
+
+    async function loadHealth() {
+      try {
+        const health = await fetchJson("/api/health");
+        const writeEnabled = Boolean(health.write_enabled || health.writeEnabled);
+
+        ui.backendStatus.textContent = "Online";
+        ui.writeMode.textContent = writeEnabled ? "Habilitada" : "Bloqueada";
+        ui.writeMode.parentElement?.classList.toggle("metric-chip--warning", !writeEnabled);
+        ui.writeCapabilityBadge.textContent = writeEnabled
+          ? "escritura habilitada"
+          : "escritura bloqueada";
+        ui.writeCapabilityBadge.classList.toggle("badge--enabled", writeEnabled);
+        ui.writeCapabilityBadge.classList.toggle("badge--locked", !writeEnabled);
+        if (ui.writeButton) {
+          ui.writeButton.disabled = !writeEnabled;
+        }
+      } catch (error) {
+        ui.backendStatus.textContent = "Offline";
+        ui.writeMode.textContent = "Bloqueada";
+        ui.dataSource.textContent = "sin conexion";
+        ui.writeCapabilityBadge.textContent = "backend inaccesible";
+        ui.writeCapabilityBadge.classList.remove("badge--enabled");
+        ui.writeCapabilityBadge.classList.add("badge--locked");
+        if (ui.writeButton) {
+          ui.writeButton.disabled = true;
+        }
+      }
+    }
+
+    async function loadChannel() {
+      try {
+        const payload = await fetchJson("/api/channel");
+        ui.channelName.textContent = pickValue(payload, RESPONSE_KEYS.name, "Telemetria Androide IA - NeuroBotics");
+        ui.channelDescription.textContent = pickValue(
+          payload,
+          RESPONSE_KEYS.description,
+          "Canal seguro para monitorizacion cognitiva en androides asistentes."
+        );
+      } catch (error) {
+        ui.channelDescription.textContent =
+          "Sin respuesta del backend. La UI sigue operativa, pero falta la metadata del canal.";
+      }
+    }
+
+    function clearLatest() {
+      ui.latestTimestamp.textContent = "--";
+      ui.latestEntryId.textContent = "--";
+      ui.latestWarningCount.textContent = "0";
+      ui.latestCognitiveLoad.textContent = "--";
+      ui.latestCoherenceLevel.textContent = "--";
+      ui.latestEmotionalIntensity.textContent = "--";
+      ui.latestInferenceLatency.textContent = "--";
+      ui.latestPowerConsumption.textContent = "--";
+    }
+
+    function renderLatest(payload) {
+      applyChannelState(payload);
+      const latest = payload?.measurement || null;
+      if (!latest) {
+        clearLatest();
+        setWarningList(ui.latestWarnings, [], "Aun no hay una medicion real para mostrar.");
+        return;
+      }
+
+      const warnings = ensureWarnings(latest);
+      ui.latestTimestamp.textContent = formatTimestamp(pickValue(latest, RESPONSE_KEYS.timestamp));
+      ui.latestEntryId.textContent = String(pickValue(latest, RESPONSE_KEYS.entryId));
+      ui.latestWarningCount.textContent = String(warnings.length);
+      ui.latestCognitiveLoad.textContent = formatNumber(pickValue(latest, RESPONSE_KEYS.cognitiveLoad), "%");
+      ui.latestCoherenceLevel.textContent = formatNumber(pickValue(latest, RESPONSE_KEYS.coherenceLevel), "%");
+      ui.latestEmotionalIntensity.textContent = formatNumber(pickValue(latest, RESPONSE_KEYS.emotionalIntensity), "%");
+      ui.latestInferenceLatency.textContent = formatNumber(pickValue(latest, RESPONSE_KEYS.inferenceLatency), " ms");
+      ui.latestPowerConsumption.textContent = formatNumber(pickValue(latest, RESPONSE_KEYS.powerConsumption), " W");
+      setWarningList(ui.latestWarnings, warnings, "Sin warnings para la ultima medicion.");
+    }
+
+    async function loadLatest() {
+      try {
+        const payload = await fetchJson("/api/telemetry/latest");
+        renderLatest(payload);
+      } catch (error) {
+        clearLatest();
+        ui.latestSourceBadge.textContent = "offline";
+        ui.latestDetail.textContent = "No se pudo recuperar la ultima medicion.";
+        setWarningList(ui.latestWarnings, [], "No se pudo recuperar la ultima medicion.");
+      }
+    }
+
+    function renderHistory(payload) {
+      applyChannelState(payload);
+      const items = extractList(payload);
+      ui.historyBody.innerHTML = "";
+
+      if (!items.length) {
+        ui.historyBody.innerHTML = `
+          <tr>
+            <td colspan="8" class="history-table__placeholder">
+              ${payload?.detail || "No hay historico disponible."}
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      const rows = items.map((item) => {
+        const source = item?.source || payload?.source || "desconocido";
+        return `
+          <tr>
+            <td>${pickValue(item, RESPONSE_KEYS.entryId)}</td>
+            <td>${formatTimestamp(pickValue(item, RESPONSE_KEYS.timestamp))}</td>
+            <td>${formatNumber(pickValue(item, RESPONSE_KEYS.cognitiveLoad), "%")}</td>
+            <td>${formatNumber(pickValue(item, RESPONSE_KEYS.coherenceLevel), "%")}</td>
+            <td>${formatNumber(pickValue(item, RESPONSE_KEYS.emotionalIntensity), "%")}</td>
+            <td>${formatNumber(pickValue(item, RESPONSE_KEYS.inferenceLatency), " ms")}</td>
+            <td>${formatNumber(pickValue(item, RESPONSE_KEYS.powerConsumption), " W")}</td>
+            <td><span class="badge badge--table">${source}</span></td>
+          </tr>
+        `;
+      });
+
+      ui.historyBody.innerHTML = rows.join("");
+    }
+
+    async function loadHistory() {
+      try {
+        const payload = await fetchJson("/api/telemetry/history?limit=10");
+        renderHistory(payload);
+      } catch (error) {
+        renderHistory({
+          source: "fixture",
+          channel_state: "fixture_fallback",
+          detail: "No se pudo recuperar el historico."
+        });
+      }
+    }
+
+    function buildTelemetryRequest(formData) {
+      // Enviamos tambien nombres semanticos en espanol para dejar la puerta abierta
+      // a futuros backends o scripts con otro naming, sin duplicar formularios.
+      const values = {
+        cognitive_load_pct: Number(formData.get("cognitive_load_pct")),
+        coherence_level_pct: Number(formData.get("coherence_level_pct")),
+        emotional_intensity_pct: Number(formData.get("emotional_intensity_pct")),
+        inference_latency_ms: Number(formData.get("inference_latency_ms")),
+        power_consumption_w: Number(formData.get("power_consumption_w"))
+      };
+
+      return {
+        ...values,
+        carga_cognitiva_pct: values.cognitive_load_pct,
+        nivel_coherencia_pct: values.coherence_level_pct,
+        intensidad_emocional_pct: values.emotional_intensity_pct,
+        latencia_inferencia_ms: values.inference_latency_ms,
+        consumo_energetico_w: values.power_consumption_w
+      };
+    }
+
+    async function submitPreview(event) {
+      event.preventDefault();
+      const formData = new FormData(ui.previewForm);
+      const requestBody = buildTelemetryRequest(formData);
+
+      ui.previewStatus.textContent = "Consultando preview al backend...";
+
+      try {
+        const payload = await fetchJson("/api/telemetry/preview", {
+          method: "POST",
+          body: JSON.stringify(requestBody)
+        });
+        ui.previewPayload.textContent = JSON.stringify(payload.payload || {}, null, 2);
+        setWarningList(
+          ui.previewWarnings,
+          ensureWarnings(payload),
+          "Sin warnings. Payload listo para revision humana."
+        );
+        ui.previewStatus.textContent =
+          payload.detail || "Preview generado. No se ha enviado ninguna escritura real.";
+      } catch (error) {
+        ui.previewPayload.textContent = "{}";
+        setWarningList(ui.previewWarnings, [], "El backend no devolvio preview.");
+        ui.previewStatus.textContent =
+          error instanceof Error ? error.message : "No se pudo generar la previsualizacion.";
+      }
+    }
+
+    async function submitWrite() {
+      const formData = new FormData(ui.previewForm);
+      const requestBody = buildTelemetryRequest(formData);
+
+      ui.writeStatus.textContent = "Enviando escritura real al backend...";
+
+      try {
+        const payload = await fetchJson("/api/telemetry/write", {
+          method: "POST",
+          body: JSON.stringify(requestBody)
+        });
+        ui.previewPayload.textContent = JSON.stringify(payload.payload || {}, null, 2);
+        setWarningList(
+          ui.previewWarnings,
+          ensureWarnings(payload),
+          "ThingSpeak acepto la escritura sin warnings heuristicas."
+        );
+        ui.writeStatus.textContent = payload.detail || "ThingSpeak acepto la escritura.";
+        await bootstrap();
+      } catch (error) {
+        ui.writeStatus.textContent =
+          error instanceof Error ? error.message : "No se pudo completar la escritura real.";
+      }
+    }
+
+    async function bootstrap() {
+      await Promise.all([loadHealth(), loadChannel(), loadLatest(), loadHistory()]);
+    }
+
+    ui.previewForm?.addEventListener("submit", submitPreview);
+    ui.writeButton?.addEventListener("click", submitWrite);
+    ui.refreshButton?.addEventListener("click", bootstrap);
+
+    bootstrap();
+  </script>
+</BaseLayout>

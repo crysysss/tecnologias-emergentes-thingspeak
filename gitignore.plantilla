@@ -1,0 +1,36 @@
+# ============================================================
+# .gitignore — Plantilla IA Nivel 3
+# ============================================================
+# Regla general:
+#   - Lo que define el PROYECTO → se versiona (compartido)
+#   - Lo que define la SESIÓN → se ignora (personal)
+# ============================================================
+
+# ==========================================================
+# ESTADO DE SESIÓN PERSONAL — NO se versiona
+# Cada programador tiene su propio estado de sesión.
+# ==========================================================
+plan.md
+memory.md
+ops-rules.md
+
+# ==========================================================
+# ARCHIVOS PUENTE de herramientas alternativas
+# Descomenta los que NO use tu equipo:
+# ==========================================================
+# .cursorrules
+# CLAUDE.md
+# AGENTS.md
+
+# ==========================================================
+# RUNE — Templates locales (referencia, no se versionan)
+# ==========================================================
+rune/templates/
+
+# ==========================================================
+# OPENSPEC — Cambios en progreso (WIP) NO suben
+# Cuando un cambio se completa y se archiva con /opsx:archive,
+# pasa a openspec/changes/archive/ que SÍ se versiona.
+# ==========================================================
+openspec/changes/*/
+!openspec/changes/archive/

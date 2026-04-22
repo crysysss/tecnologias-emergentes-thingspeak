@@ -1,0 +1,5 @@
+{
+  "thingspeak_read_api_key": "",
+  "thingspeak_write_api_key": "",
+  "thingspeak_allow_write": false
+}

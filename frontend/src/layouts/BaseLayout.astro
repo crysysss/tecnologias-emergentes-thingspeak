@@ -1,0 +1,28 @@
+---
+import "../styles/app.css";
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = "Telemetria NeuroBotics",
+  description = "Panel seguro para lectura y previsualizacion de telemetria cognitiva."
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <title>{title}</title>
+  </head>
+  <body>
+    <div class="page-chassis">
+      <slot />
+    </div>
+  </body>
+</html>

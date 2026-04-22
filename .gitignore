@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Node / Astro
+frontend/node_modules/
+frontend/dist/
+.astro/
+
+# Local configuration
+.env
+.env.local
+frontend/.env
+frontend/.env.local
+config/app_settings.local.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
