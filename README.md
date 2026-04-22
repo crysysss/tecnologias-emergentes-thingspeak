@@ -91,6 +91,20 @@ npm run dev
 
 Frontend disponible por defecto en `http://127.0.0.1:4321`.
 
+### Script de arranque rapido
+
+Si prefieres abrir backend y frontend con un solo comando:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\run_local_demo.ps1
+```
+
+Modo simulacion sin lanzar ventanas:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\run_local_demo.ps1 -DryRun
+```
+
 ## Como probarlo por ti misma
 
 ### 1. Arrancar backend y frontend
