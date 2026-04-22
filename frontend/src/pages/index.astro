@@ -40,10 +40,10 @@ const backendBaseUrl =
         <span class="notice-card__eyebrow">Regla operativa</span>
         <h2>Canal publico con trazabilidad</h2>
         <p>
-          El dashboard distingue entre tres estados reales: lectura en vivo con datos,
-          canal accesible pero vacio y fallback local por error de red. El preview
-          nunca escribe; la escritura real depende de que el backend tenga la
-          configuracion local habilitada.
+          El dashboard funciona en modo online estricto: o muestra lecturas reales
+          de ThingSpeak, o informa de que el canal esta vacio o no accesible. El
+          preview nunca escribe; la escritura real depende de que el backend tenga
+          la configuracion local habilitada.
         </p>
       </article>
 
@@ -51,8 +51,8 @@ const backendBaseUrl =
         <span class="notice-card__eyebrow">Monitor</span>
         <h2 id="health-headline">Esperando respuesta del backend</h2>
         <p id="health-detail">
-          Si el backend esta offline o sin red, la interfaz indicara con claridad si
-          esta usando el dataset local o si el canal real esta accesible pero vacio.
+          Si el backend esta offline o ThingSpeak no responde, la interfaz lo
+          indicara sin inventar datos locales para rellenar el historico.
         </p>
       </article>
     </section>
@@ -274,18 +274,6 @@ const backendBaseUrl =
         source: "ThingSpeak vacio",
         headline: "Canal accesible pero sin mediciones",
         detail: "ThingSpeak responde, pero el canal todavia no tiene muestras completas."
-      },
-      fixture_fallback: {
-        badge: "Fallback local",
-        source: "Fallback local",
-        headline: "Fallback local por error de lectura",
-        detail: "La aplicacion ha pasado al dataset local porque la lectura en vivo fallo."
-      },
-      fixture_only: {
-        badge: "Dataset local",
-        source: "Dataset local",
-        headline: "Lectura local por configuracion",
-        detail: "Las lecturas en vivo estan deshabilitadas y solo se usa el dataset local."
       }
     };
 
@@ -376,9 +364,9 @@ const backendBaseUrl =
 
     function applyChannelState(payload) {
       // La UI no deduce estados por intuicion: usa la clasificacion explicita del
-      // backend para diferenciar canal vacio, live real y fallback local.
-      const state = payload?.channel_state || (payload?.source === "fixture" ? "fixture_fallback" : "live_data");
-      const stateConfig = CHANNEL_STATE_MAP[state] || CHANNEL_STATE_MAP.fixture_fallback;
+      // backend para diferenciar si ThingSpeak tiene datos o si el canal sigue vacio.
+      const state = payload?.channel_state || "live_empty";
+      const stateConfig = CHANNEL_STATE_MAP[state] || CHANNEL_STATE_MAP.live_empty;
       const detail = payload?.detail || stateConfig.detail;
 
       ui.dataSource.textContent = stateConfig.source;
@@ -386,6 +374,14 @@ const backendBaseUrl =
       ui.healthDetail.textContent = detail;
       ui.latestSourceBadge.textContent = stateConfig.badge;
       ui.latestDetail.textContent = detail;
+    }
+
+    function applyReadUnavailableState(message) {
+      ui.dataSource.textContent = "sin datos online";
+      ui.healthHeadline.textContent = "Telemetria online no disponible";
+      ui.healthDetail.textContent = message;
+      ui.latestSourceBadge.textContent = "sin lectura";
+      ui.latestDetail.textContent = message;
     }
 
     async function fetchJson(path, options = {}) {
@@ -417,7 +413,7 @@ const backendBaseUrl =
     async function loadHealth() {
       try {
         const health = await fetchJson("/api/health");
-        const writeEnabled = Boolean(health.write_enabled || health.writeEnabled);
+        const writeEnabled = Boolean(health.writes_enabled || health.writesEnabled);
 
         ui.backendStatus.textContent = "Online";
         ui.writeMode.textContent = writeEnabled ? "Habilitada" : "Bloqueada";
@@ -496,8 +492,9 @@ const backendBaseUrl =
         renderLatest(payload);
       } catch (error) {
         clearLatest();
-        ui.latestSourceBadge.textContent = "offline";
-        ui.latestDetail.textContent = "No se pudo recuperar la ultima medicion.";
+        const message =
+          error instanceof Error ? error.message : "No se pudo recuperar la ultima medicion online.";
+        applyReadUnavailableState(message);
         setWarningList(ui.latestWarnings, [], "No se pudo recuperar la ultima medicion.");
       }
     }
@@ -542,11 +539,13 @@ const backendBaseUrl =
         const payload = await fetchJson("/api/telemetry/history?limit=10");
         renderHistory(payload);
       } catch (error) {
-        renderHistory({
-          source: "fixture",
-          channel_state: "fixture_fallback",
-          detail: "No se pudo recuperar el historico."
-        });
+        ui.historyBody.innerHTML = `
+          <tr>
+            <td colspan="8" class="history-table__placeholder">
+              ${error instanceof Error ? error.message : "No se pudo recuperar el historico online."}
+            </td>
+          </tr>
+        `;
       }
     }
 

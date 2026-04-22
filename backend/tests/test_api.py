@@ -7,6 +7,7 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 from backend.config import load_settings
+from backend.thingspeak_client import ThingSpeakUnavailable
 
 
 class ApiTestCase(unittest.TestCase):
@@ -23,14 +24,10 @@ class ApiTestCase(unittest.TestCase):
         os.environ.pop("THINGSPEAK_ALLOW_WRITE", None)
         load_settings.cache_clear()
 
-    def test_history_uses_fixture_when_live_reads_disabled(self) -> None:
+    def test_history_returns_503_when_live_reads_are_disabled(self) -> None:
         response = self.client.get("/api/telemetry/history?limit=3")
-        self.assertEqual(response.status_code, 200)
-        payload = response.json()
-        self.assertEqual(payload["source"], "fixture")
-        self.assertEqual(payload["channel_state"], "fixture_only")
-        self.assertEqual(payload["count"], 3)
-        self.assertEqual(len(payload["measurements"]), 3)
+        self.assertEqual(response.status_code, 503)
+        self.assertIn("deshabilitadas por configuracion", response.json()["detail"])
 
     def test_history_reports_live_empty_when_channel_has_no_feed_entries(self) -> None:
         os.environ["THINGSPEAK_ALLOW_LIVE_READS"] = "true"
@@ -48,6 +45,19 @@ class ApiTestCase(unittest.TestCase):
         self.assertEqual(payload["channel_state"], "live_empty")
         self.assertEqual(payload["count"], 0)
         self.assertEqual(payload["measurements"], [])
+
+    def test_history_returns_503_when_thingspeak_is_unavailable(self) -> None:
+        os.environ["THINGSPEAK_ALLOW_LIVE_READS"] = "true"
+        load_settings.cache_clear()
+
+        with patch(
+            "backend.thingspeak_client.ThingSpeakClient.read_history",
+            side_effect=ThingSpeakUnavailable("Timeout leyendo ThingSpeak"),
+        ):
+            response = self.client.get("/api/telemetry/history?limit=3")
+
+        self.assertEqual(response.status_code, 503)
+        self.assertIn("Timeout leyendo ThingSpeak", response.json()["detail"])
 
     def test_preview_endpoint_returns_payload_without_write(self) -> None:
         response = self.client.post(

@@ -14,7 +14,7 @@ from backend.models import (
     TelemetryWriteRequest,
     TelemetryWriteResponse,
 )
-from backend.service import ControlledWriteRejected, TelemetryService
+from backend.service import ControlledReadRejected, ControlledWriteRejected, TelemetryService
 from backend.thingspeak_client import ThingSpeakUnavailable
 
 
@@ -66,12 +66,22 @@ def channel() -> ChannelInfo:
 
 @app.get("/api/telemetry/history", response_model=HistoryResponse)
 def telemetry_history(limit: int = Query(default=10, ge=1, le=50)) -> HistoryResponse:
-    return get_service().get_history(limit=limit)
+    try:
+        return get_service().get_history(limit=limit)
+    except ControlledReadRejected as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except ThingSpeakUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
 @app.get("/api/telemetry/latest", response_model=LatestResponse)
 def telemetry_latest() -> LatestResponse:
-    return get_service().get_latest()
+    try:
+        return get_service().get_latest()
+    except ControlledReadRejected as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except ThingSpeakUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
 @app.post("/api/telemetry/preview", response_model=TelemetryPreviewResponse)

@@ -6,8 +6,8 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 
-TelemetrySource = Literal["live", "fixture"]
-TelemetryChannelState = Literal["live_data", "live_empty", "fixture_fallback", "fixture_only"]
+TelemetrySource = Literal["live"]
+TelemetryChannelState = Literal["live_data", "live_empty"]
 TelemetryHeuristicState = Literal["stable", "warning", "critical"]
 
 
@@ -53,7 +53,7 @@ class HealthResponse(BaseModel):
     detail: str
     live_reads_enabled: bool
     writes_enabled: bool
-    fallback_samples: int
+    seed_dataset_samples: int
     channel_id: int
 
 

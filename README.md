@@ -10,13 +10,13 @@ para subirse a un repositorio publico y ejecutarse tal cual tras clonarlo.
 - Frontend en `frontend/` con Astro.
 - Canal por defecto del proyecto: `3353980`.
 - Credenciales de prueba ya incluidas en `config/app_settings.json`.
-- Lectura en vivo con distincion entre:
-  - `live_data`,
-  - `live_empty`,
-  - `fixture_fallback`,
-  - `fixture_only`.
+- Lectura 100% online con distincion entre:
+  - `live_data`
+  - `live_empty`
 - Preview local del payload y escritura real disponible por defecto sobre el canal
   de pruebas.
+- El dataset de la practica vive en `backend/data/neurobotics_fixture.json` y se
+  usa solo como semilla para poblar ThingSpeak, no como fallback de lectura.
 - El canal de pruebas ya contiene las 10 muestras del PDF de la practica.
 
 ## Metricas del dominio
@@ -93,13 +93,27 @@ Frontend disponible por defecto en `http://127.0.0.1:4321`.
 
 - `channel_state=live_data`: ThingSpeak devuelve mediciones completas.
 - `channel_state=live_empty`: el canal responde pero aun no tiene muestras utiles.
-- `channel_state=fixture_fallback`: la red falla y se usa el dataset del PDF.
-- `channel_state=fixture_only`: la lectura en vivo esta deshabilitada por config.
+
+Si ThingSpeak no responde o la lectura en vivo esta deshabilitada, los endpoints
+de lectura devuelven `HTTP 503` y la interfaz no sustituye esos datos por el
+dataset local.
 
 ## Escritura real
 
 La escritura real ya viene habilitada por defecto porque este repositorio apunta
 al canal de pruebas del proyecto.
+
+## Dataset semilla
+
+El proyecto conserva el dataset original de la practica en:
+
+```text
+backend/data/neurobotics_fixture.json
+```
+
+Ese archivo no se consulta para pintar el dashboard. Su funcion es servir como
+dataset semilla reproducible para cargar muestras en ThingSpeak con el script del
+proyecto.
 
 ### Escribir una sola medicion por API
 

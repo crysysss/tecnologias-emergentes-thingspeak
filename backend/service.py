@@ -29,6 +29,10 @@ class ControlledWriteRejected(RuntimeError):
     """Raised when the application blocks a real write by policy or request state."""
 
 
+class ControlledReadRejected(RuntimeError):
+    """Raised when the application blocks a live read by configuration."""
+
+
 def _format_decimal(value: float) -> str:
     # ThingSpeak espera cadenas con punto decimal. Este helper conserva precision
     # humana sin dejar ceros sobrantes como "52.400000".
@@ -193,7 +197,7 @@ def _build_preview_artifacts(
     measurement = _measurement_from_values(
         entry_id=0,
         recorded_at=datetime.now().astimezone(),
-        source="fixture",
+        source="live",
         cognitive_load_pct=request.cognitive_load_pct,
         coherence_level_pct=request.coherence_level_pct,
         emotional_intensity_pct=request.emotional_intensity_pct,
@@ -224,15 +228,16 @@ class TelemetryService:
         return HealthResponse(
             status="ok",
             app_name=self._settings.app_name,
-            source="auto" if self._settings.thingspeak_allow_live_reads else "fixture_only",
+            source="online_only" if self._settings.thingspeak_allow_live_reads else "disabled",
             detail=(
-                "La API intenta leer ThingSpeak y solo usa el dataset local cuando la red falla."
+                "La API solo muestra datos leidos en vivo desde ThingSpeak. "
+                "El dataset local se conserva unicamente como semilla para poblar el canal."
                 if self._settings.thingspeak_allow_live_reads
-                else "Las lecturas en vivo estan deshabilitadas y solo se usa el dataset local."
+                else "Las lecturas en vivo estan deshabilitadas por configuracion."
             ),
             live_reads_enabled=self._settings.thingspeak_allow_live_reads,
             writes_enabled=self._settings.thingspeak_allow_write,
-            fallback_samples=len(load_fixture_dataset()),
+            seed_dataset_samples=len(load_fixture_dataset()),
             channel_id=self._settings.thingspeak_channel_id,
         )
 
@@ -275,33 +280,23 @@ class TelemetryService:
             fields=field_definitions,
             live_reads_enabled=self._settings.thingspeak_allow_live_reads,
             writes_enabled=self._settings.thingspeak_allow_write,
-            read_source_mode="auto" if self._settings.thingspeak_allow_live_reads else "fixture_only",
+            read_source_mode="live_only" if self._settings.thingspeak_allow_live_reads else "disabled",
         )
 
     def get_history(self, limit: int) -> HistoryResponse:
-        # La app distingue cuatro estados:
+        # La app queda en modo online estricto:
         # 1. live_data: ThingSpeak responde con mediciones utiles.
         # 2. live_empty: el canal existe pero aun no tiene muestras completas.
-        # 3. fixture_fallback: la red falla y se usa el dataset de la practica.
-        # 4. fixture_only: la lectura en vivo esta deshabilitada por configuracion.
+        # Si la red falla o la lectura esta deshabilitada, el endpoint debe
+        # informar error en vez de sustituir datos reales por el dataset semilla.
         safe_limit = max(1, min(limit, 50))
-        if self._settings.thingspeak_allow_live_reads:
-            try:
-                payload = self._client.read_history(safe_limit)
-                return self._history_from_thingspeak_payload(payload, safe_limit)
-            except ThingSpeakUnavailable as exc:
-                return self._history_from_fixture(
-                    safe_limit,
-                    channel_state="fixture_fallback",
-                    detail="ThingSpeak no respondio en vivo y se usa el dataset local de la practica.",
-                    reason=str(exc),
-                )
-        return self._history_from_fixture(
-            safe_limit,
-            channel_state="fixture_only",
-            detail="Las lecturas en vivo estan deshabilitadas por configuracion.",
-            reason="Las lecturas en vivo estan deshabilitadas por configuracion.",
-        )
+        if not self._settings.thingspeak_allow_live_reads:
+            raise ControlledReadRejected(
+                "Las lecturas en vivo estan deshabilitadas por configuracion."
+            )
+
+        payload = self._client.read_history(safe_limit)
+        return self._history_from_thingspeak_payload(payload, safe_limit)
 
     def get_latest(self) -> LatestResponse:
         # latest reutiliza history(limit=1) para no duplicar logica de estados.
@@ -359,39 +354,6 @@ class TelemetryService:
                 "Escritura real confirmada y enviada al canal configurado. "
                 f"ThingSpeak devolvio entry_id={entry_id}."
             ),
-        )
-
-    def _history_from_fixture(
-        self,
-        limit: int,
-        *,
-        channel_state: str,
-        detail: str,
-        reason: str | None,
-    ) -> HistoryResponse:
-        # El fixture replica el dataset del PDF para que la app siga siendo
-        # demostrable incluso si ThingSpeak no responde.
-        rows = load_fixture_dataset()[:limit]
-        measurements = [
-            _measurement_from_values(
-                entry_id=row["entry_id"],
-                recorded_at=datetime.fromisoformat(row["recorded_at"].replace("Z", "+00:00")),
-                source="fixture",
-                cognitive_load_pct=row["cognitive_load_pct"],
-                coherence_level_pct=row["coherence_level_pct"],
-                emotional_intensity_pct=row["emotional_intensity_pct"],
-                inference_latency_ms=row["inference_latency_ms"],
-                power_consumption_w=row["power_consumption_w"],
-            )
-            for row in rows
-        ]
-        return HistoryResponse(
-            source="fixture",
-            channel_state=channel_state,  # type: ignore[arg-type]
-            count=len(measurements),
-            detail=detail,
-            fallback_reason=reason,
-            measurements=measurements,
         )
 
     def _history_from_thingspeak_payload(self, payload: dict, limit: int) -> HistoryResponse:

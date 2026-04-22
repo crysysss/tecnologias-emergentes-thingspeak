@@ -25,7 +25,12 @@ LEEME-NIVEL3.md
 closeout_checklist.md
 gitignore.plantilla
 memory.md
-openspec/
+openspec/*
+!openspec/changes/
+openspec/changes/*
+!openspec/changes/crear-mvp-telemetria-neurobotics/
+openspec/changes/crear-mvp-telemetria-neurobotics/*
+!openspec/changes/crear-mvp-telemetria-neurobotics/design.md
 ops-rules.md
 plan.md
 rune/

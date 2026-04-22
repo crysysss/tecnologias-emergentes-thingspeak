@@ -6,7 +6,7 @@ API FastAPI para lectura, normalizacion y escritura controlada sobre ThingSpeak.
 
 - Lee el canal ThingSpeak configurado en `config/app_settings.json`.
 - Si ThingSpeak responde pero el canal esta vacio, devuelve `channel_state=live_empty`.
-- Si ThingSpeak falla por red, usa el dataset local del PDF y marca `channel_state=fixture_fallback`.
+- Si ThingSpeak no responde o la lectura online esta deshabilitada, devuelve `HTTP 503`.
 - Permite preview local del payload sin tocar la red.
 - Permite escritura real por defecto porque el proyecto versionado ya incluye las
   claves de prueba del canal `3353980`.
@@ -58,4 +58,5 @@ python scripts\publish_fixture_to_thingspeak.py --count 10
 ```
 
 El script reutiliza la misma validacion que la API y respeta el retardo entre
-escrituras definido en configuracion.
+escrituras definido en configuracion. El dataset JSON se conserva para poblar el
+canal de ThingSpeak, no como fallback de lectura del dashboard.
