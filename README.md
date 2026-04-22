@@ -150,7 +150,6 @@ config/    Configuracion principal lista para ejecutar y overrides opcionales
 frontend/  Dashboard Astro
 scripts/   Automatizaciones reproducibles, incluida la carga del dataset del PDF
 specs/     Contratos RUNE
-openspec/  Cambio OpenSpec del MVP
 ```
 
 ## Documentos de referencia
@@ -159,4 +158,3 @@ openspec/  Cambio OpenSpec del MVP
 - `Tematica Actividad 2.pdf`
 - `specs/construir_payload_thingspeak_estabilidad.rune`
 - `specs/preparar_escritura_controlada_thingspeak.rune`
-- `openspec/changes/crear-mvp-telemetria-neurobotics/`

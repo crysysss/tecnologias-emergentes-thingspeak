@@ -16,6 +16,23 @@ frontend/.env
 frontend/.env.local
 config/app_settings.local.json
 
+# Local-only internal / methodology artifacts
+.env.example
+.ia_skills/
+AGENTS.md
+GUIA_RAPIDA.md
+LEEME-NIVEL3.md
+closeout_checklist.md
+gitignore.plantilla
+memory.md
+openspec/
+ops-rules.md
+plan.md
+rune/
+soul.md
+Captura de pantalla 2026-04-21 140019.png
+Captura de pantalla 2026-04-21 140222.png
+
 # OS / editor
 .DS_Store
 Thumbs.db
