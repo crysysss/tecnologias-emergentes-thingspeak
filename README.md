@@ -62,6 +62,17 @@ camino principal de configuracion es `config/`.
 
 ## Arranque rapido
 
+### 0. Preparar el entorno
+
+```powershell
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+cd frontend
+npm install
+cd ..
+```
+
 ### 1. Backend
 
 ```powershell
@@ -79,6 +90,89 @@ npm run dev
 ```
 
 Frontend disponible por defecto en `http://127.0.0.1:4321`.
+
+## Como probarlo por ti misma
+
+### 1. Arrancar backend y frontend
+
+Abre dos terminales:
+
+- Terminal 1:
+
+```powershell
+python -m uvicorn backend.main:app --reload
+```
+
+- Terminal 2:
+
+```powershell
+cd frontend
+npm run dev
+```
+
+### 2. Comprobar el backend
+
+Abre la documentacion interactiva:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+Prueba estos endpoints:
+
+- `GET /api/health`
+  - debe devolver backend operativo y modo de lectura online
+- `GET /api/channel`
+  - debe devolver el canal configurado y las etiquetas reales de ThingSpeak
+- `GET /api/telemetry/history`
+  - si el canal tiene datos, devuelve mediciones reales
+  - si el canal esta vacio, devuelve `channel_state=live_empty`
+  - si ThingSpeak no responde, devuelve `HTTP 503`
+- `GET /api/telemetry/latest`
+  - debe devolver la ultima medicion real o `live_empty` si no hay datos
+
+### 3. Comprobar el dashboard
+
+Abre:
+
+```text
+http://127.0.0.1:4321
+```
+
+Verifica:
+
+- si el canal tiene datos, el dashboard muestra solo datos online reales
+- si el canal esta vacio, el dashboard indica que el canal esta vacio
+- si ThingSpeak falla, el dashboard muestra error de lectura y no rellena con el PDF
+
+### 4. Probar preview y escritura
+
+- pulsa `Previsualizar payload` para validar una muestra sin escribir
+- pulsa `Escribir en canal` para enviar una muestra real al canal configurado
+- pulsa `Actualizar` para comprobar si aparece la nueva fila en el historico
+
+### 5. Cambiar al canal oficial del grupo
+
+Si quieres probar el repo contra otro canal sin tocar la configuracion versionada,
+crea este archivo local:
+
+```text
+config/app_settings.local.json
+```
+
+Ejemplo:
+
+```json
+{
+  "thingspeak_channel_id": 1234567,
+  "thingspeak_read_api_key": "TU_READ_KEY",
+  "thingspeak_write_api_key": "TU_WRITE_KEY",
+  "thingspeak_allow_live_reads": true,
+  "thingspeak_allow_write": true
+}
+```
+
+Ese archivo pisa la configuracion base solo en tu maquina y no se sube al repo.
 
 ## Endpoints del backend
 
